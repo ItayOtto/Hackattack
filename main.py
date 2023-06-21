@@ -1,6 +1,20 @@
 import mouse
 import time
 from PIL import ImageGrab
+from enum import Enum
+
+
+class Tiles(Enum):
+    EMPTY = 0
+    FLAG = 1
+    GRAY0 = 2
+    SKY1 = 3
+    GREEN2 = 4
+    RED3 = 5
+    PURPLE4 = 6
+    ORANGE5 = 7
+    BLUE6 = 8
+
 
 ImageScreenshot = ImageGrab.grab()
 
@@ -97,26 +111,24 @@ def inputCell(x, y):
     #  use the x_cell and y_cell!!
     x_cell = real_x + x * real_d
     y_cell = real_y + y * real_d
-    if SearchForcolor(x_cell, y_cell, sky1, alpha, ColorsDiff):
-        return 0
-    elif SearchForcolor(x_cell, y_cell, green2, alpha, ColorsDiff):
-        return
-    elif SearchForcolor(x_cell, y_cell, red3, alpha, ColorsDiff):
-        return
-    elif SearchForcolor(x_cell, y_cell, purple4, alpha, ColorsDiff):
-        return
-    elif SearchForcolor(x_cell, y_cell, orange5, alpha, ColorsDiff):
-        return
-    elif SearchForcolor(x_cell, y_cell, blue6, alpha, ColorsDiff):
-        return
+    if SearchForcolor(x_cell, y_cell, SKY1, alpha, ColorsDiff):
+        return Tiles.SKY1.valuse
+    elif SearchForcolor(x_cell, y_cell, GREEN2, alpha, ColorsDiff):
+        return Tiles.GREEN2.valuse
+    elif SearchForcolor(x_cell, y_cell, RED3, alpha, ColorsDiff):
+        return Tiles.RED3.valuse
+    elif SearchForcolor(x_cell, y_cell, PURPLE4, alpha, ColorsDiff):
+        return Tiles.PURPLE4.valuse
+    elif SearchForcolor(x_cell, y_cell, ORANGE5, alpha, ColorsDiff):
+        return Tiles.ORANGE5.valuse
+    elif SearchForcolor(x_cell, y_cell, BLUE6, alpha, ColorsDiff):
+        return Tiles.BLUE6.valuse
     elif SearchForcolor(x_cell, y_cell, color7, alpha, ColorsDiff):
-        return
-    elif SearchForcolor(x_cell, y_cell, flag, alpha, ColorsDiff):
-        return
-    elif SearchForcolor(x_cell, y_cell, emtpy, alpha, ColorsDiff):
-        return
-    elif SearchForcolor(x_cell, y_cell, gray0, alpha, ColorsDiff):
-        return
+        return Tiles.color7.valuse
+    elif SearchForcolor(x_cell, y_cell, FLAG, alpha, ColorsDiff):
+        return Tiles.FLAG.valuse
+    elif SearchForcolor(x_cell, y_cell, EMPTY, alpha, ColorsDiff):
+        return Tiles.EMPTY.valuse
 
 
 def updateGrid():
