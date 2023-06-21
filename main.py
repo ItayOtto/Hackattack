@@ -37,7 +37,7 @@ class Tiles(Enum):
     COLOR8 = 8
 
 
-ImageScreenshot = ImageGrab.grab()
+ImageScreenshot = ImageGrab.grab(bbox=(2578, 174, 3153, 1278))
 
 
 actual_grid = [[0] * height for _ in range(width)]
@@ -64,7 +64,7 @@ def moveMouseCell(x, y):
     moveMouse((real_x + x * real_d, real_y + y * real_d))
 
 
-def shiftMouse(x,y):
+def shiftMouse(x, y):
     mouse.move(x, y, absolute=False, duration=1.0)
 
 
@@ -91,10 +91,10 @@ def ColorDist (c1, c2):
     return (c1[0] - c2[0]) ** 2 + (c1[1] - c2[1]) ** 2 + (c1[2] - c2[2]) ** 2
 
 
-def SearchForcolor(x, y, color, radius, colorDist):
+def SearchForcolor(x, y, color, radius, color_dist):
     for i in range(int(x - radius * alpha), int(x + radius * alpha)):
         for j in range(int(y - radius * alpha), int(y + radius * alpha)):
-            if ColorDist(GetPixelRGB((i, j)), color) < colorDist:
+            if ColorDist(GetPixelRGB((i, j)), color) < color_dist:
                 return True
     return False
 
@@ -172,7 +172,7 @@ def updateGrid():
     moveMouse(leftCorner)
     time.sleep(0.1)
     global ImageScreenshot
-    ImageScreenshot = ImageGrab.grab()
+    ImageScreenshot = ImageGrab.grab(bbox=(2578, 174, 3153, 1278))
     for x in range(width):
         for y in range(height):
             value = inputCell(x, y)
@@ -250,9 +250,9 @@ def solveGrid():
 # while 1:
 #     if mouse.is_pressed("left"):
 #         print (getPos())
-#         print (GetPixelRGB(getPos()))
+#         # print (GetPixelRGB(getPos()))
 #         time.sleep(0.2)
-
+#
 
 
 
