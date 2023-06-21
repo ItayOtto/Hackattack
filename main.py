@@ -7,7 +7,7 @@ ImageScreenshot = ImageGrab.grab()
 width = 18
 height = 20
 
-actual_grid = [[0] * width for i in range(height)]
+actual_grid = [[0] * height for i in range(width)]
 
 alpha = 0.4
 leftCorner = (2591, 188)
@@ -33,8 +33,17 @@ def shiftMouse(x,y):
     mouse.move(x, y, absolute=False, duration=1.0)
 
 
-def longClick (t):
-    mouse.drag(0, 0, 0, 0, absolute=False, duration=t)
+def fastClick():
+    time.sleep(0.02)
+    mouse.drag(0, 0, 0, 0, absolute=False, duration=0.035)
+    time.sleep(0.02)
+
+def longClick ():
+    # todo:
+    #  find a good time fot that
+    time.sleep(0.02)
+    mouse.drag(0, 0, 0, 0, absolute=False, duration=0.5)
+    time.sleep(0.02)
 
 
 def getPos():
@@ -79,8 +88,8 @@ def FindButtomRightCorner():
 
 
 def printGrid():
-    for line in actual_grid:
-        print(line)
+    for j in range(height):
+        print(' '.join([str(actual_grid[i][j]) for i in range(width)]))
 
 
 def inputCell(x, y):
@@ -113,9 +122,28 @@ def inputCell(x, y):
 def updateGrid():
     global ImageScreenshot
     ImageScreenshot = ImageGrab.grab()
-    for y in range(height):
-        for x in range(width):
-            actual_grid[y][x] = inputCell(x, y)
+    for x in range(width):
+        for y in range(height):
+            actual_grid[x][y] = inputCell(x, y)
+
+
+def getNeighbors(x, y):
+    neighbors = []
+    for i in range(x - 1, x + 2):
+        for j in range(y - 1, y + 2):
+            if (not 0 <= i < width) or (not 0 <= j <= height) or ((x, y) == (i, j)):
+                continue
+            neighbors.append(actual_grid[i][j])
+    return neighbors
+
+
+def solveGrid():
+    for i in range(height):
+        for j in range(width):
+            pass
+
+
+
 
 # 2579, 489
 # 2579, 1032
@@ -180,7 +208,7 @@ answer_y = 523
 answer_d = 26.4
 
 
-
+'''
 time.sleep(1)
 for i in range(width):
     for j in range(height):
@@ -195,8 +223,11 @@ for i in range(width):
             longClick(0.035)
             time.sleep(0.02)
 
+'''
+
 #ToDo: to correct the white search algorithm
 
+'''
 oldPos = []
 c = 10
 while c:
@@ -222,3 +253,5 @@ while c:
                 time.sleep(0.02)
 
     ImageScreenshot = ImageGrab.grab()
+
+'''
