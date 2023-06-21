@@ -7,7 +7,7 @@ ImageScreenshot = ImageGrab.grab()
 width = 18
 height = 20
 
-actual_grid = [[0]*width for i in range(height)]
+actual_grid = [[0] * width for i in range(height)]
 
 alpha = 0.4
 leftCorner = (2591, 188)
@@ -16,26 +16,34 @@ pixelJump = 5
 grayDiff = 1000
 ColorsDiff = 1500
 
+
 def GetPixelRGB(pos):
     return ImageScreenshot.load()[pos]
+
 
 def moveMouse(x,y):
     mouse.move(x, y, absolute=True, duration=0.0)
 
+
 def moveMouseCell(x,y):
     moveMouse(real_x + x * real_d, real_y + y * real_d)
+
 
 def shiftMouse(x,y):
     mouse.move(x, y, absolute=False, duration=1.0)
 
+
 def longClick (t):
     mouse.drag(0, 0, 0, 0, absolute=False, duration=t)
+
 
 def getPos():
     return mouse.get_position()
 
+
 def ColorDist (c1, c2):
     return (c1[0] - c2[0]) ** 2 + (c1[1] - c2[1]) ** 2 + (c1[2] - c2[2]) ** 2
+
 
 def SearchForcolor(x, y, color, radius, colorDist):
     for i in range(int(x - radius * alpha), int(x + radius * alpha)):
@@ -43,6 +51,7 @@ def SearchForcolor(x, y, color, radius, colorDist):
             if ColorDist(GetPixelRGB((i, j)), color) < colorDist:
                 return True
     return False
+
 
 def SearchForNumbers(x, y, radius, colorDist):
     for i in range(int(x - radius * alpha), int(x + radius * alpha)):
@@ -52,12 +61,14 @@ def SearchForNumbers(x, y, radius, colorDist):
                     return i, j
     return None, None
 
+
 def FindTopLeftCorner():
     for i in range(leftCorner[1], rightCorner[1]):
         for j in range(leftCorner[0], rightCorner[0]):
             if ColorDist(GetPixelRGB((j, i)), GetPixelRGB((j + pixelJump, i))) > grayDiff:
                 return (j + pixelJump, i)
     return None
+
 
 def FindButtomRightCorner():
     for i in range(rightCorner[1], leftCorner[1], -1):
@@ -66,9 +77,11 @@ def FindButtomRightCorner():
                 return (j - pixelJump, i)
     return None
 
+
 def printGrid():
     for line in actual_grid:
         print(line)
+
 
 def inputCell(x, y):
     # todo:
