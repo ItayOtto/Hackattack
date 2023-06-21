@@ -88,7 +88,7 @@ def inputCell(x, y):
     # use the x_cell and y_cell!!
     x_cell = real_x + x * real_d
     y_cell = real_y + y * real_d
-    if SearchForcolor(x, y, sky1, alpha, ColorsDiff):
+    if SearchForcolor(x_cell, y_cell, sky1, alpha, ColorsDiff):
         return 0
     elif SearchForcolor(x, y, green2, alpha, ColorsDiff):
         return
