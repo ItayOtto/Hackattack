@@ -66,7 +66,7 @@ def FindTopLeftCorner():
     for i in range(leftCorner[1], rightCorner[1]):
         for j in range(leftCorner[0], rightCorner[0]):
             if ColorDist(GetPixelRGB((j, i)), GetPixelRGB((j + pixelJump, i))) > grayDiff:
-                return (j + pixelJump, i)
+                return j + pixelJump, i
     return None
 
 
@@ -74,7 +74,7 @@ def FindButtomRightCorner():
     for i in range(rightCorner[1], leftCorner[1], -1):
         for j in range(rightCorner[0], leftCorner[0], -1):
             if ColorDist(GetPixelRGB((j, i)), GetPixelRGB((j - pixelJump, i))) > grayDiff:
-                return (j - pixelJump, i)
+                return j - pixelJump, i
     return None
 
 
@@ -85,28 +85,28 @@ def printGrid():
 
 def inputCell(x, y):
     # todo:
-    # use the x_cell and y_cell!!
+    #  use the x_cell and y_cell!!
     x_cell = real_x + x * real_d
     y_cell = real_y + y * real_d
     if SearchForcolor(x_cell, y_cell, sky1, alpha, ColorsDiff):
         return 0
-    elif SearchForcolor(x, y, green2, alpha, ColorsDiff):
+    elif SearchForcolor(x_cell, y_cell, green2, alpha, ColorsDiff):
         return
-    elif SearchForcolor(x, y, red3, alpha, ColorsDiff):
+    elif SearchForcolor(x_cell, y_cell, red3, alpha, ColorsDiff):
         return
-    elif SearchForcolor(x, y, purple4, alpha, ColorsDiff):
+    elif SearchForcolor(x_cell, y_cell, purple4, alpha, ColorsDiff):
         return
-    elif SearchForcolor(x, y, orange5, alpha, ColorsDiff):
+    elif SearchForcolor(x_cell, y_cell, orange5, alpha, ColorsDiff):
         return
-    elif SearchForcolor(x, y, blue6, alpha, ColorsDiff):
+    elif SearchForcolor(x_cell, y_cell, blue6, alpha, ColorsDiff):
         return
-    elif SearchForcolor(x, y, color7, alpha, ColorsDiff):
+    elif SearchForcolor(x_cell, y_cell, color7, alpha, ColorsDiff):
         return
-    elif SearchForcolor(x, y, flag, alpha, ColorsDiff):
+    elif SearchForcolor(x_cell, y_cell, flag, alpha, ColorsDiff):
         return
-    elif SearchForcolor(x, y, emtpy, alpha, ColorsDiff):
+    elif SearchForcolor(x_cell, y_cell, emtpy, alpha, ColorsDiff):
         return
-    elif SearchForcolor(x, y, gray0, alpha, ColorsDiff):
+    elif SearchForcolor(x_cell, y_cell, gray0, alpha, ColorsDiff):
         return
 
 
