@@ -1,11 +1,21 @@
+from functools import reduce
+
 import mouse
 import time
 from PIL import ImageGrab
 from enum import Enum
 
 
-width = 16#18
-height = 30#20
+#Todo:
+# 1. get a 4*4 square
+# 2. put all blank tiles in a list (blank tiles which are near a number (GetNeighbors))
+# 3. brute force all options for a filling
+# 4. (for each option) check if correct
+# 5. take the tiles all correct fillings are agreeing on
+# 6. click them
+
+width = 16
+height = 16
 
 
 # Number Color
@@ -37,27 +47,31 @@ class Tiles(Enum):
     COLOR8 = 8
 
 
-ImageScreenshot = ImageGrab.grab(bbox=(2578, 174, 3153, 1278))
+top_left_corner = (2578, 174)
+bottom_right_corner = (3153, 1278)
+outside_gray = (54, 54, 54)
+
+ImageScreenshot = ImageGrab.grab(bbox=(top_left_corner[0], top_left_corner[1], bottom_right_corner[0], bottom_right_corner[1]))
 
 
 actual_grid = [[0] * height for _ in range(width)]
 exposed_grid = [[False] * height for _ in range(width)]
 
 alpha = 0.4
-leftCorner = (20, 20)#(2591, 188)
-rightCorner = (550, 1080)#(3153, 1238)
+leftCorner = (20, 20) # (2591, 188)
+rightCorner = (550, 1080) # (3153, 1238)
 pixelJump = 5
 grayDiff = 500
 ColorsDiff = 1500
 
-# rgb(54, 54, 54)
+
 def GetPixelRGB(pos):
     return ImageScreenshot.load()[pos]
 
 
 def moveMouse(pos):
-
-    mouse.move(pos[0]+2578, pos[1]+174, absolute=True, duration=0.0)
+    # move
+    mouse.move(pos[0] + top_left_corner[0], pos[1] + top_left_corner[1], absolute = True, duration = 0.0)
 
 
 def moveMouseCell(x, y):
@@ -69,18 +83,17 @@ def shiftMouse(x, y):
 
 
 def fastClick():
-    time.sleep(0.03)
-    # time.sleep(1)
-    mouse.drag(0, 0, 0, 0, absolute=False, duration=0.035)
-    # time.sleep(1)
-    time.sleep(0.03)
+    time.sleep(0.035)
+    mouse.drag(0, 0, 0, 0, absolute = False, duration = 0.05)
+    time.sleep(0.035)
+
 
 def longClick ():
     # todo:
     #  find a good time fot that
-    time.sleep(0.02)
-    mouse.drag(0, 0, 0, 0, absolute=False, duration=0.5)
-    time.sleep(0.02)
+    time.sleep(0.035)
+    mouse.drag(0, 0, 0, 0, absolute = False, duration = 0.5)
+    time.sleep(0.035)
 
 
 def getPos():
@@ -110,28 +123,32 @@ def SearchForNumbers(x, y, radius, colorDist):
 '''
 
 
-def FindTopLeftCorner():
-    # todo:
-    #  ugly!!!
-    allx = []
-    ally = []
-    for i in range(leftCorner[1], rightCorner[1]):
-        for j in range(leftCorner[0], rightCorner[0]):
-            if ColorDist(GetPixelRGB((j, i)), GetPixelRGB((j + pixelJump, i))) > grayDiff:
-                allx.append(j+pixelJump)
-                ally.append(i)
-                # return j + pixelJump, i
-    return min(allx), min(ally)
+def SearchForEdge(x1, x2, y1, y2, dir):
+    scan_count = 15
+    if x1 > x2:
+        x1, x2 = x2, x1
 
+    if y1 > y2:
+        y1, y2 = y2, y1
 
-def FindButtomRightCorner():
-    # todo:
-    #  fix it, it might not work
-    for i in range(rightCorner[1], leftCorner[1], -1):
-        for j in range(rightCorner[0], leftCorner[0], -1):
-            if ColorDist(GetPixelRGB((j, i)), GetPixelRGB((j - pixelJump, i))) > grayDiff:
-                return j - pixelJump, i
-    return None
+    if x1 == x2:
+        # searching for vertical edge
+        x = x1
+        while 1:
+            step_size = (y2 - y1) // scan_count
+            for y in range(y1, y2, step_size):
+                if ColorDist(outside_gray, GetPixelRGB((x, y))) > grayDiff:
+                    return x
+            x += dir
+    if y1 == y2:
+        # searching for vertical edge
+        y = y1
+        while 1:
+            step_size = (x2 - x1) // scan_count
+            for x in range(x1, x2, step_size):
+                if ColorDist(outside_gray, GetPixelRGB((x, y))) > grayDiff:
+                    return y
+            y += dir
 
 
 def printGrid():
@@ -170,7 +187,7 @@ def inputCell(x, y):
 
 def updateGrid():
     moveMouse(leftCorner)
-    time.sleep(0.1)
+    time.sleep(0.01)
     global ImageScreenshot
     ImageScreenshot = ImageGrab.grab(bbox=(2578, 174, 3153, 1278))
     for x in range(width):
@@ -197,12 +214,10 @@ def seenEnoughFlags(x, y):
     emptyCount = neighbors.count(9)
 
     if emptyCount == 0:
-        return
+        return False
 
     if flagCount == actual_grid[x][y]:
-        print("seen enough flags", x, y)
-        moveMouseCell(x, y)
-        fastClick()
+        return True
 
 
 def mustSeeFlags(x, y):
@@ -211,36 +226,76 @@ def mustSeeFlags(x, y):
     emptyCount = neighbors.count(9)
     value = actual_grid[x][y]
     if value == flagCount + emptyCount:
-        for i in range(x - 1, x + 2):
-            for j in range(y - 1, y + 2):
-                if (0 <= i < width) and (0 <= j < height):
-                    if actual_grid[i][j] == 9:
-                        print("must see flags", x, y)
-                        moveMouseCell(i, j)
-                        fastClick()
-                        actual_grid[i][j] = -1
+        return True
+    return False
 
 
 def smart(x, y):
-    # get a 4x4 grid
-    environment = [[9] * 4] * 4
-    for i in range(x, x + 4):
-        for j in range(y, y + 4):
-            if (i < width) and (j <= height):
-                environment[i-x][j-y] = actual_grid[i][j]
+    suv = get_suv(x, y)
+    tiles = interesting_blank_tiles(suv)
+    tiles_count = len(tiles)
+    all_good_tries = []
+    for sol in range(1 << tiles_count):
+        for i in range(tiles_count):
+            pos = tiles[i]
+            if (1 << i) & sol:
+                actual_grid[pos[0]+x][pos[1]+y] = -1
+            else:
+                actual_grid[pos[0]+x][pos[1]+y] = 11 # some number we don't know about
+        if good_try(x, y):
+            all_good_tries.append(sol)
+    print(suv)
+    print(tiles)
+    print(all_good_tries)
+    # revert changes
+    for i in range(tiles_count):
+        pos = tiles[i]
+        actual_grid[pos[0] + x][pos[1] + y] = 9
+
+    if not all_good_tries:
+        return False
+
+    and_of_all = [all(sol & (1 << tile) for sol in all_good_tries) for tile in range(tiles_count)]
+    or_of_all = [all(sol & (1 << tile) == 0 for sol in all_good_tries) for tile in range(tiles_count)]
+    need_for_pic = False
+    for i in range(tiles_count):
+        if and_of_all[i]:
+            # make a flag
+            pos = tiles[i]
+            moveMouseCell(x + pos[0], y+pos[1])
+            fastClick()
+            actual_grid[x + pos[0]][y+pos[1]] = -1
+        if or_of_all[i]:
+            # make a number
+            pos = tiles[i]
+            moveMouseCell(x + pos[0], y + pos[1])
+            longClick()
+            need_for_pic = True
+    return need_for_pic
 
 
 def solveGrid():
     for i in range(width):
         for j in range(height):
-            seenEnoughFlags(i, j)
-            mustSeeFlags(i, j)
-            # smart(i, j)
 
+            if seenEnoughFlags(i, j):
+                print("seen enough flags", i, j)
+                moveMouseCell(i, j)
+                fastClick()
 
-# 2579, 489
-# 2579, 1032
-# 3123, 1032
+            if mustSeeFlags(i, j):
+                for x in range(i - 1, j + 2):
+                    for y in range(i - 1, j + 2):
+                        if (0 <= x < width) and (0 <= y < height):
+                            if actual_grid[x][y] == 9:
+                                print("must see flags", x, y)
+                                moveMouseCell(x, y)
+                                fastClick()
+                                actual_grid[i][j] = -1
+
+            if smart(i, j):
+                return
+
 
 # while 1:
 #     if mouse.is_pressed("left"):
@@ -255,11 +310,15 @@ def solveGrid():
 #
 
 
-
-
 # find corners
-x_l, y_t = FindTopLeftCorner()
-x_r, y_b = FindButtomRightCorner()
+screen_width = bottom_right_corner[0] - top_left_corner[0] - 10
+screen_height = bottom_right_corner[1] - top_left_corner[1] - 10
+
+x_l = SearchForEdge(5, 5, 5, screen_height, 1)
+x_r = SearchForEdge(screen_width, screen_width, 5, screen_height, -1)
+y_t = SearchForEdge(5, screen_width, 5, 5, 1)
+y_b = SearchForEdge(5, screen_width, screen_height, screen_height, -1)
+
 # realGame
 real_d = (y_b - y_t) / height
 # should be the same
@@ -269,18 +328,14 @@ real_y = y_t + real_d / 2
 
 # moveMouse((x_l,y_t))
 # exit(0)
-# moveMouseCell(1,1)
 # print(GetPixelRGB(getPos()))
 
 # updateGrid()
 # printGrid()
-# print(inputCell(11, 14))
-# moveMouseCell(11, 14)
-# mustSeeFlags(11,14)
-# exit(0)
-c = 200
-# moveMouseCell(8,8)
+# print(get_suv(3, 1))
 
+
+c = 100
 while c:
     c -= 1
     updateGrid()
