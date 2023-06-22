@@ -1,6 +1,6 @@
 import mouse
 import time
-from PIL import ImageGrab
+import ctypes
 from enum import Enum
 
 
@@ -37,9 +37,6 @@ class Tiles(Enum):
     COLOR8 = 8
 
 
-ImageScreenshot = ImageGrab.grab(bbox=(2578, 174, 3153, 1278))
-
-
 actual_grid = [[0] * height for _ in range(width)]
 exposed_grid = [[False] * height for _ in range(width)]
 
@@ -51,12 +48,29 @@ grayDiff = 500
 ColorsDiff = 1500
 
 # rgb(54, 54, 54)
+
+def benchmark(func, *args, **kwargs):
+    start_time = time.time()
+    result = func(*args, **kwargs)
+    end_time = time.time()
+    execution_time = end_time - start_time
+    print(f"Execution time: {execution_time} seconds")
+    return result
+
+
 def GetPixelRGB(pos):
-    return ImageScreenshot.load()[pos]
+    gdi32 = ctypes.windll.gdi32
+    user32 = ctypes.windll.user32
+    hdc = user32.GetDC(None)
+    pixel = gdi32.GetPixel(hdc, pos[0], pos[1])
+    r = pixel & 0xFF
+    g = (pixel >> 8) & 0xFF
+    b = (pixel >> 16) & 0xFF
+    user32.ReleaseDC(None, hdc)
+    return (r, g, b)
 
 
 def moveMouse(pos):
-
     mouse.move(pos[0]+2578, pos[1]+174, absolute=True, duration=0.0)
 
 
@@ -172,7 +186,6 @@ def updateGrid():
     moveMouse(leftCorner)
     time.sleep(0.1)
     global ImageScreenshot
-    ImageScreenshot = ImageGrab.grab(bbox=(2578, 174, 3153, 1278))
     for x in range(width):
         for y in range(height):
             value = inputCell(x, y)
@@ -339,7 +352,4 @@ while c:
                 time.sleep(0.02)
                 longClick(0.035)
                 time.sleep(0.02)
-
-    ImageScreenshot = ImageGrab.grab()
-
 '''
