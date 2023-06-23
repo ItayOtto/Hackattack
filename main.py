@@ -1,18 +1,8 @@
-from functools import reduce
-
 import mouse
 import time
 from PIL import ImageGrab
 from enum import Enum
 
-
-#Todo:
-# 1. get a 4*4 square
-# 2. put all blank tiles in a list (blank tiles which are near a number (GetNeighbors))
-# 3. brute force all options for a filling
-# 4. (for each option) check if correct
-# 5. take the tiles all correct fillings are agreeing on
-# 6. click them
 
 width = 16
 height = 16
@@ -151,9 +141,9 @@ def SearchForEdge(x1, x2, y1, y2, dir):
             y += dir
 
 
-def printGrid():
-    for j in range(height):
-        print(' '.join([str(actual_grid[i][j]) for i in range(width)]))
+def printGrid(grid):
+    for j in range(len(grid[0])):
+        print(' '.join([str(grid[i][j]) for i in range(len(grid))]))
 
 
 def inputCell(x, y):
@@ -235,37 +225,44 @@ def smart(x, y):
     tiles = interesting_blank_tiles(suv)
     tiles_count = len(tiles)
     all_good_tries = []
+    print("original suv:")
+    printGrid(suv)
+    print()
     for sol in range(1 << tiles_count):
         for i in range(tiles_count):
             pos = tiles[i]
             if (1 << i) & sol:
                 actual_grid[pos[0]+x][pos[1]+y] = -1
+                suv[pos[0]][pos[1]] = -1
             else:
-                actual_grid[pos[0]+x][pos[1]+y] = 11 # some number we don't know about
+                actual_grid[pos[0]+x][pos[1]+y] = 11  # some number we don't know about
+                suv[pos[0]][pos[1]] = 11
         if good_try(x, y):
+            print("viable solution:")
+            printGrid(suv)
+            print()
             all_good_tries.append(sol)
-    print(suv)
-    print(tiles)
-    print(all_good_tries)
+
     # revert changes
-    for i in range(tiles_count):
-        pos = tiles[i]
+    for pos in tiles:
         actual_grid[pos[0] + x][pos[1] + y] = 9
 
     if not all_good_tries:
+        for _ in range(100):
+            print("DANGER!!!!")
         return False
 
-    and_of_all = [all(sol & (1 << tile) for sol in all_good_tries) for tile in range(tiles_count)]
-    or_of_all = [all(sol & (1 << tile) == 0 for sol in all_good_tries) for tile in range(tiles_count)]
+    flag_for_all = [all(sol & (1 << tile) for sol in all_good_tries) for tile in range(tiles_count)]
+    number_for_all = [all(sol & (1 << tile) == 0 for sol in all_good_tries) for tile in range(tiles_count)]
     need_for_pic = False
     for i in range(tiles_count):
-        if and_of_all[i]:
+        if flag_for_all[i]:
             # make a flag
             pos = tiles[i]
-            moveMouseCell(x + pos[0], y+pos[1])
+            moveMouseCell(x + pos[0], y + pos[1])
             fastClick()
-            actual_grid[x + pos[0]][y+pos[1]] = -1
-        if or_of_all[i]:
+            actual_grid[x + pos[0]][y + pos[1]] = -1
+        if number_for_all[i]:
             # make a number
             pos = tiles[i]
             moveMouseCell(x + pos[0], y + pos[1])
@@ -339,7 +336,7 @@ c = 100
 while c:
     c -= 1
     updateGrid()
-    printGrid()
+    printGrid(actual_grid)
     solveGrid()
 
 
