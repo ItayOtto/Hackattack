@@ -5,12 +5,12 @@ from enum import Enum
 
 
 width = 16
-height = 16
+height = 30
 
 
 # Number Color
 emtpy = (156, 81, 8)
-flag = (250, 253, 255)
+flag = (250, 250, 250)
 gray0 = (76, 76, 76)
 sky1 = (8, 195, 255)
 green2 = (110, 218, 9)
@@ -37,67 +37,69 @@ class Tiles(Enum):
     COLOR8 = 8
 
 
-top_left_corner = (2578, 174)
-bottom_right_corner = (3153, 1278)
+top_l_corner = (2578, 174)
+bottom_r_corner = (3153, 1278)
 outside_gray = (54, 54, 54)
+suv_size = 4
+ImageScreenshot = ImageGrab.grab(bbox=(top_l_corner[0], top_l_corner[1], bottom_r_corner[0], bottom_r_corner[1]))
 
-ImageScreenshot = ImageGrab.grab(bbox=(top_left_corner[0], top_left_corner[1], bottom_right_corner[0], bottom_right_corner[1]))
 
-
-actual_grid = [[0] * height for _ in range(width)]
+actual_grid = [[9] * height for _ in range(width)]
 exposed_grid = [[False] * height for _ in range(width)]
 
-alpha = 0.4
-leftCorner = (20, 20) # (2591, 188)
-rightCorner = (550, 1080) # (3153, 1238)
+alpha = 0.2
+leftCorner = (20, 20)  # (2591, 188)
+rightCorner = (550, 1080)  # (3153, 1238)
 pixelJump = 5
 grayDiff = 500
-ColorsDiff = 1500
+ColorsDiff = 3500
 
 
-def GetPixelRGB(pos):
+def get_pixel_rgb(pos):
     return ImageScreenshot.load()[pos]
 
 
-def moveMouse(pos):
+def move_mouse(pos):
     # move
-    mouse.move(pos[0] + top_left_corner[0], pos[1] + top_left_corner[1], absolute = True, duration = 0.0)
+    mouse.move(pos[0] + top_l_corner[0], pos[1] + top_l_corner[1], absolute=True, duration=0.0)
 
 
-def moveMouseCell(x, y):
-    moveMouse((real_x + x * real_d, real_y + y * real_d))
+def move_mouse_cell(x, y):
+    # print("moved to pos:")
+    # print(x, y)
+    move_mouse((real_x + x * real_d, real_y + y * real_d))
 
 
-def shiftMouse(x, y):
+def shift_mouse(x, y):
     mouse.move(x, y, absolute=False, duration=1.0)
 
 
-def fastClick():
-    time.sleep(0.035)
-    mouse.drag(0, 0, 0, 0, absolute = False, duration = 0.05)
-    time.sleep(0.035)
+def fast_click():
+    # time.sleep(0.15)
+    mouse.drag(0, 0, 0, 0, absolute=False, duration=0.15)
+    time.sleep(0.05)
 
 
-def longClick ():
+def long_click():
     # todo:
     #  find a good time fot that
-    time.sleep(0.035)
-    mouse.drag(0, 0, 0, 0, absolute = False, duration = 0.5)
-    time.sleep(0.035)
+    # time.sleep(0.15)
+    mouse.drag(0, 0, 0, 0, absolute=False, duration=0.4)
+    time.sleep(0.05)
 
 
-def getPos():
+def get_pos():
     return mouse.get_position()
 
 
-def ColorDist (c1, c2):
+def color_dist(c1, c2):
     return (c1[0] - c2[0]) ** 2 + (c1[1] - c2[1]) ** 2 + (c1[2] - c2[2]) ** 2
 
 
-def SearchForcolor(x, y, color, radius, color_dist):
+def search_for_color(x, y, color, radius, color_dist_allowed):
     for i in range(int(x - radius * alpha), int(x + radius * alpha)):
         for j in range(int(y - radius * alpha), int(y + radius * alpha)):
-            if ColorDist(GetPixelRGB((i, j)), color) < color_dist:
+            if color_dist(get_pixel_rgb((i, j)), color) < color_dist_allowed:
                 return True
     return False
 
@@ -113,7 +115,7 @@ def SearchForNumbers(x, y, radius, colorDist):
 '''
 
 
-def SearchForEdge(x1, x2, y1, y2, dir):
+def search_for_edge(x1, x2, y1, y2, direction):
     scan_count = 15
     if x1 > x2:
         x1, x2 = x2, x1
@@ -127,68 +129,95 @@ def SearchForEdge(x1, x2, y1, y2, dir):
         while 1:
             step_size = (y2 - y1) // scan_count
             for y in range(y1, y2, step_size):
-                if ColorDist(outside_gray, GetPixelRGB((x, y))) > grayDiff:
+                if color_dist(outside_gray, get_pixel_rgb((x, y))) > grayDiff:
                     return x
-            x += dir
+            x += direction
     if y1 == y2:
         # searching for vertical edge
         y = y1
         while 1:
             step_size = (x2 - x1) // scan_count
             for x in range(x1, x2, step_size):
-                if ColorDist(outside_gray, GetPixelRGB((x, y))) > grayDiff:
+                if color_dist(outside_gray, get_pixel_rgb((x, y))) > grayDiff:
                     return y
-            y += dir
+            y += direction
 
 
-def printGrid(grid):
+def make_str_length_2(num):
+    s = str(num)
+    if 0 <= num <= 9:
+        s = ' ' + s
+    return s
+
+
+def print_grid(grid):
     for j in range(len(grid[0])):
-        print(' '.join([str(grid[i][j]) for i in range(len(grid))]))
+        print(' '.join([make_str_length_2(grid[i][j]) for i in range(len(grid))]))
 
 
-def inputCell(x, y):
+def input_cell(x, y):
     x_cell = real_x + x * real_d
     y_cell = real_y + y * real_d
-    isBackgroundGray = SearchForcolor(x_cell, y_cell, gray0, real_d, ColorsDiff)
+    is_background_gray = search_for_color(x_cell, y_cell, gray0, real_d, ColorsDiff)
 
-    if SearchForcolor(x_cell, y_cell, flag, real_d, ColorsDiff):
+    if search_for_color(x_cell, y_cell, flag, real_d, ColorsDiff):
         return Tiles.FLAG.value
-    elif SearchForcolor(x_cell, y_cell, sky1, real_d, ColorsDiff) and isBackgroundGray:
+    elif search_for_color(x_cell, y_cell, sky1, real_d, ColorsDiff) and is_background_gray:
         return Tiles.SKY1.value
-    elif SearchForcolor(x_cell, y_cell, green2, real_d, ColorsDiff) and isBackgroundGray:
+    elif search_for_color(x_cell, y_cell, green2, real_d, ColorsDiff) and is_background_gray:
         return Tiles.GREEN2.value
-    elif SearchForcolor(x_cell, y_cell, red3, real_d, ColorsDiff) and isBackgroundGray:
+    elif search_for_color(x_cell, y_cell, red3, real_d, ColorsDiff) and is_background_gray:
         return Tiles.RED3.value
-    elif SearchForcolor(x_cell, y_cell, purple4, real_d, ColorsDiff) and isBackgroundGray:
+    elif search_for_color(x_cell, y_cell, purple4, real_d, ColorsDiff) and is_background_gray:
         return Tiles.PURPLE4.value
-    elif SearchForcolor(x_cell, y_cell, orange5, real_d, ColorsDiff) and isBackgroundGray:
+    elif search_for_color(x_cell, y_cell, orange5, real_d, ColorsDiff) and is_background_gray:
         return Tiles.ORANGE5.value
-    elif SearchForcolor(x_cell, y_cell, blue6, real_d, ColorsDiff) and isBackgroundGray:
+    elif search_for_color(x_cell, y_cell, blue6, real_d, ColorsDiff) and is_background_gray:
         return Tiles.BLUE6.value
-    # elif SearchForcolor(x_cell, y_cell, color7, real_d, ColorsDiff) and isBackgroundGray:
+    # elif search_for_color(x_cell, y_cell, color7, real_d, ColorsDiff) and is_background_gray:
     #     return Tiles.COLOR7.value
-    # elif SearchForcolor(x_cell, y_cell, color8, real_d, ColorsDiff) and isBackgroundGray:
+    # elif search_for_color(x_cell, y_cell, color8, real_d, ColorsDiff) and is_background_gray:
     #     return Tiles.COLOR8.value
-    elif SearchForcolor(x_cell, y_cell, emtpy, real_d, ColorsDiff):
+    elif search_for_color(x_cell, y_cell, emtpy, real_d, ColorsDiff):
         return Tiles.EMPTY.value
-    elif isBackgroundGray:
+    elif is_background_gray:
         return Tiles.GRAY0.value
+    else:
+        print("DID NOT RECOGNIZE CELL!!!")
+        print(x, y)
+        return None
 
 
-def updateGrid():
-    moveMouse(leftCorner)
-    time.sleep(0.01)
+def update_grid():
+    move_mouse(leftCorner)
+    time.sleep(0.2)
     global ImageScreenshot
     ImageScreenshot = ImageGrab.grab(bbox=(2578, 174, 3153, 1278))
+    wx = None
+    wy = None
+    bef =0
     for x in range(width):
         for y in range(height):
-            value = inputCell(x, y)
+            prev_value = actual_grid[x][y]
+            value = input_cell(x, y)
+            if (not prev_value == 9) and (not value == prev_value):
+                wx = x
+                wy = y
+                bef = prev_value
             actual_grid[x][y] = value
             if not value == 9:
                 exposed_grid[x][y] = True
 
+    if wx is not None:
+        print("DANGER! DIDN'T PRESS")
+        print_grid(actual_grid)
+        print(wx, wy)
+        print("before it was: " + str(bef))
+        move_mouse_cell(wx, wy)
+        exit(0)
 
-def getNeighbors(x, y):
+
+def get_neighbors(x, y):
     neighbors = []
     for i in range(x - 1, x + 2):
         for j in range(y - 1, y + 2):
@@ -198,26 +227,81 @@ def getNeighbors(x, y):
     return neighbors
 
 
-def seenEnoughFlags(x, y):
-    neighbors = getNeighbors(x, y)
-    flagCount = neighbors.count(-1)
-    emptyCount = neighbors.count(9)
+def neighbors_exists_in_a_box(suv, x, y):
+    for i in range(x - 1, x + 2):
+        for j in range(y - 1, y + 2):
+            if 0 <= i < suv_size and 0 <= j < suv_size:
+                if 1 <= suv[i][j] <= 8:
+                    return True
+    return False
 
-    if emptyCount == 0:
+
+def get_suv(x, y):
+    # get a 4x4 grid
+    suv = [[-999] * suv_size for _ in range(suv_size)]
+    for i in range(x, x + suv_size):
+        for j in range(y, y + suv_size):
+            if (i < width) and (j < height):
+                suv[i-x][j-y] = actual_grid[i][j]
+    return suv
+
+
+def seen_enough_flags(x, y):
+    neighbors = get_neighbors(x, y)
+    flag_count = neighbors.count(-1)
+    empty_count = neighbors.count(9)
+
+    if empty_count == 0:
         return False
 
-    if flagCount == actual_grid[x][y]:
+    if flag_count == actual_grid[x][y]:
         return True
 
 
-def mustSeeFlags(x, y):
-    neighbors = getNeighbors(x, y)
-    flagCount = neighbors.count(-1)
-    emptyCount = neighbors.count(9)
+def must_see_flags(x, y):
+    neighbors = get_neighbors(x, y)
+    flag_count = neighbors.count(-1)
+    empty_count = neighbors.count(9)
     value = actual_grid[x][y]
-    if value == flagCount + emptyCount:
+    if value == flag_count + empty_count:
         return True
     return False
+
+
+def interesting_blank_tiles(suv):
+    blank_tiles = []
+    for i in range(suv_size):
+        for j in range(suv_size):
+            if suv[i][j] == 9 and neighbors_exists_in_a_box(suv, i, j):
+                blank_tiles.append((i, j))
+    return blank_tiles
+
+
+def good_try(x, y):
+    for i in range(x - 2, x + suv_size + 2):
+        for j in range(y - 2, y + suv_size + 2):
+            if (not 0 <= i < width) or (not 0 <= j < height):
+                continue
+            value = actual_grid[i][j]
+            if 1 <= value <= 8:
+                neighbors = get_neighbors(i, j)
+                if neighbors.count(-1) > value:
+                    return False
+                if neighbors.count(9) + neighbors.count(-1) < value:
+                    return False
+    return True
+
+
+def surrounded_by_flags():
+    for x in range(width):
+        for y in range(height):
+            if actual_grid[x][y] == 9:
+                neighbors = get_neighbors(x, y)
+                if all([nei == -1 for nei in neighbors]):
+                    print("SPECIAL FUCKING MOVE!!!")
+                    print("NUMBER SURROUNDED BY FLAGS!!!")
+                    move_mouse_cell(x,y)
+                    long_click()
 
 
 def smart(x, y):
@@ -225,8 +309,10 @@ def smart(x, y):
     tiles = interesting_blank_tiles(suv)
     tiles_count = len(tiles)
     all_good_tries = []
+    if tiles_count == 0:
+        return False
     print("original suv:")
-    printGrid(suv)
+    print_grid(suv)
     print()
     for sol in range(1 << tiles_count):
         for i in range(tiles_count):
@@ -239,7 +325,7 @@ def smart(x, y):
                 suv[pos[0]][pos[1]] = 11
         if good_try(x, y):
             print("viable solution:")
-            printGrid(suv)
+            print_grid(suv)
             print()
             all_good_tries.append(sol)
 
@@ -248,9 +334,8 @@ def smart(x, y):
         actual_grid[pos[0] + x][pos[1] + y] = 9
 
     if not all_good_tries:
-        for _ in range(100):
-            print("DANGER!!!!")
-        return False
+        print("DANGER!!!!")
+        exit(0)
 
     flag_for_all = [all(sol & (1 << tile) for sol in all_good_tries) for tile in range(tiles_count)]
     number_for_all = [all(sol & (1 << tile) == 0 for sol in all_good_tries) for tile in range(tiles_count)]
@@ -259,39 +344,52 @@ def smart(x, y):
         if flag_for_all[i]:
             # make a flag
             pos = tiles[i]
-            moveMouseCell(x + pos[0], y + pos[1])
-            fastClick()
+            move_mouse_cell(x + pos[0], y + pos[1])
+            fast_click()
             actual_grid[x + pos[0]][y + pos[1]] = -1
+            print("made smart flag")
+            print(x + pos[0], y + pos[1])
         if number_for_all[i]:
             # make a number
             pos = tiles[i]
-            moveMouseCell(x + pos[0], y + pos[1])
-            longClick()
+            move_mouse_cell(x + pos[0], y + pos[1])
+            long_click()
             need_for_pic = True
+            print("made smart number")
+            print(x + pos[0], y + pos[1])
     return need_for_pic
 
 
-def solveGrid():
+def suv_intersect(pos1, pos2):
+    if pos1[0] <= pos2[0] < pos1[0] + 4 and pos1[1] <= pos2[1] < pos1[1] + 4:
+        return True
+    if pos2[0] <= pos1[0] < pos2[0] + 4 and pos2[1] <= pos1[1] < pos2[1] + 4:
+        return True
+    return False
+
+
+def solve_grid():
+    smart_already_done = []
     for i in range(width):
         for j in range(height):
 
-            if seenEnoughFlags(i, j):
-                print("seen enough flags", i, j)
-                moveMouseCell(i, j)
-                fastClick()
+            # if seen_enough_flags(i, j):
+            #     print("seen enough flags", i, j)
+            #     move_mouse_cell(i, j)
+            #     fast_click()
 
-            if mustSeeFlags(i, j):
-                for x in range(i - 1, j + 2):
-                    for y in range(i - 1, j + 2):
-                        if (0 <= x < width) and (0 <= y < height):
-                            if actual_grid[x][y] == 9:
-                                print("must see flags", x, y)
-                                moveMouseCell(x, y)
-                                fastClick()
-                                actual_grid[i][j] = -1
-
-            if smart(i, j):
-                return
+            # if mustSeeFlags(i, j):
+            #     for x in range(i - 1, j + 2):
+            #         for y in range(i - 1, j + 2):
+            #             if (0 <= x < width) and (0 <= y < height):
+            #                 if actual_grid[x][y] == 9:
+            #                     print("must see flags", x, y)
+            #                     moveMouseCell(x, y)
+            #                     fastClick()
+            #                     actual_grid[i][j] = -1
+            if all([not suv_intersect(pos, (i, j)) for pos in smart_already_done]):
+                if smart(i, j):
+                    smart_already_done.append((i, j))
 
 
 # while 1:
@@ -308,13 +406,13 @@ def solveGrid():
 
 
 # find corners
-screen_width = bottom_right_corner[0] - top_left_corner[0] - 10
-screen_height = bottom_right_corner[1] - top_left_corner[1] - 10
+screen_width = bottom_r_corner[0] - top_l_corner[0] - 10
+screen_height = bottom_r_corner[1] - top_l_corner[1] - 10
 
-x_l = SearchForEdge(5, 5, 5, screen_height, 1)
-x_r = SearchForEdge(screen_width, screen_width, 5, screen_height, -1)
-y_t = SearchForEdge(5, screen_width, 5, 5, 1)
-y_b = SearchForEdge(5, screen_width, screen_height, screen_height, -1)
+x_l = search_for_edge(5, 5, 5, screen_height, 1)
+x_r = search_for_edge(screen_width, screen_width, 5, screen_height, -1)
+y_t = search_for_edge(5, screen_width, 5, 5, 1)
+y_b = search_for_edge(5, screen_width, screen_height, screen_height, -1)
 
 # realGame
 real_d = (y_b - y_t) / height
@@ -322,6 +420,7 @@ real_d = (y_b - y_t) / height
 # ral_d = (x_r - x_l) / width
 real_x = x_l + real_d / 2
 real_y = y_t + real_d / 2
+
 
 # moveMouse((x_l,y_t))
 # exit(0)
@@ -331,13 +430,28 @@ real_y = y_t + real_d / 2
 # printGrid()
 # print(get_suv(3, 1))
 
+# print(input_cell(3,12))
+# move_mouse_cell(3,12)
+# exit(0)
 
-c = 100
+# move_mouse((real_x-alpha*real_d, real_y-alpha*real_d))
+# time.sleep(2)
+# move_mouse((real_x+alpha*real_d, real_y+alpha*real_d))
+# exit(0)
+c = 300
 while c:
     c -= 1
-    updateGrid()
-    printGrid(actual_grid)
-    solveGrid()
+    t1 = time.time()
+    update_grid()
+    print_grid(actual_grid)
+    t2 = time.time()
+    solve_grid()
+    t3 = time.time()
+    surrounded_by_flags()
+    t4 = time.time()
+    print("updating: " + str(t2 - t1))
+    print("solving: "+str(t3-t2))
+    print("surrounded: " + str(t4 - t3))
 
 
 '''
@@ -354,7 +468,7 @@ for i in range(width):
     for j in range(height):
         newX = answer_x + i * answer_d
         newY = answer_y + j * answer_d
-        if SearchForcolor(newX, newY, (255, 255, 255), answer_d, 1500):
+        if search_for_color(newX, newY, (255, 255, 255), answer_d, 1500):
             press_x = real_x + i * real_d
             press_y = real_y + j * real_d
 
@@ -365,7 +479,7 @@ for i in range(width):
 
 '''
 
-#ToDo: to correct the white search algorithm
+# ToDo: to correct the white search algorithm
 
 '''
 oldPos = []
