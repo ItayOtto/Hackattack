@@ -4,8 +4,17 @@ from PIL import ImageGrab
 from enum import Enum
 
 
-width = 16
-height = 30
+# todo:
+#  1. better color theme. it doesnt work for bigger maps
+#  2. stop updating cells which are already known (know which cells are stable)
+#  3. faster input cell. we are currently searching ~9 different times each cell
+#  4. use seen enough flags!!! (even in the middle of the smart algo)
+#  5. verify last round clicks - remember new nums and flags and verify next round
+#  6. find more improvements
+
+
+width = 14
+height = 20
 
 
 # Number Color
@@ -37,8 +46,8 @@ class Tiles(Enum):
     COLOR8 = 8
 
 
-top_l_corner = (2578, 174)
-bottom_r_corner = (3153, 1278)
+top_l_corner = (282, 177)
+bottom_r_corner = (877, 1362)
 outside_gray = (54, 54, 54)
 suv_size = 4
 ImageScreenshot = ImageGrab.grab(bbox=(top_l_corner[0], top_l_corner[1], bottom_r_corner[0], bottom_r_corner[1]))
@@ -48,14 +57,17 @@ actual_grid = [[9] * height for _ in range(width)]
 exposed_grid = [[False] * height for _ in range(width)]
 
 alpha = 0.2
-leftCorner = (20, 20)  # (2591, 188)
-rightCorner = (550, 1080)  # (3153, 1238)
 pixelJump = 5
 grayDiff = 500
 ColorsDiff = 3500
 
+# unnecessary
+# leftCorner = (20, 20)  # (2591, 188)
+# rightCorner = (550, 1080)  # (3153, 1238)
+
 
 def get_pixel_rgb(pos):
+    # print(pos)
     return ImageScreenshot.load()[pos]
 
 
@@ -76,7 +88,7 @@ def shift_mouse(x, y):
 
 def fast_click():
     # time.sleep(0.15)
-    mouse.drag(0, 0, 0, 0, absolute=False, duration=0.15)
+    mouse.drag(0, 0, 0, 0, absolute=False, duration=0.125)
     time.sleep(0.05)
 
 
@@ -84,7 +96,7 @@ def long_click():
     # todo:
     #  find a good time fot that
     # time.sleep(0.15)
-    mouse.drag(0, 0, 0, 0, absolute=False, duration=0.4)
+    mouse.drag(0, 0, 0, 0, absolute=False, duration=0.45)
     time.sleep(0.05)
 
 
@@ -97,8 +109,8 @@ def color_dist(c1, c2):
 
 
 def search_for_color(x, y, color, radius, color_dist_allowed):
-    for i in range(int(x - radius * alpha), int(x + radius * alpha)):
-        for j in range(int(y - radius * alpha), int(y + radius * alpha)):
+    for i in range(int(x - radius * alpha), int(x + radius * alpha),2):
+        for j in range(int(y - radius * alpha), int(y + radius * alpha),2):
             if color_dist(get_pixel_rgb((i, j)), color) < color_dist_allowed:
                 return True
     return False
@@ -185,17 +197,17 @@ def input_cell(x, y):
     else:
         print("DID NOT RECOGNIZE CELL!!!")
         print(x, y)
-        return None
+        exit(0)
 
 
 def update_grid():
-    move_mouse(leftCorner)
-    time.sleep(0.2)
+    move_mouse((0, 0))
+    time.sleep(0.25)
     global ImageScreenshot
-    ImageScreenshot = ImageGrab.grab(bbox=(2578, 174, 3153, 1278))
+    ImageScreenshot = ImageGrab.grab(bbox=(top_l_corner[0], top_l_corner[1], bottom_r_corner[0], bottom_r_corner[1]))
     wx = None
     wy = None
-    bef =0
+    bef = 0
     for x in range(width):
         for y in range(height):
             prev_value = actual_grid[x][y]
@@ -209,12 +221,13 @@ def update_grid():
                 exposed_grid[x][y] = True
 
     if wx is not None:
-        print("DANGER! DIDN'T PRESS")
+        print("DIDN'T PRESS")
         print_grid(actual_grid)
         print(wx, wy)
         print("before it was: " + str(bef))
-        move_mouse_cell(wx, wy)
-        exit(0)
+        print("now it is: " + str(actual_grid[wx][wy]))
+
+        # exit(0)
 
 
 def get_neighbors(x, y):
@@ -311,9 +324,9 @@ def smart(x, y):
     all_good_tries = []
     if tiles_count == 0:
         return False
-    print("original suv:")
-    print_grid(suv)
-    print()
+    # print("original suv:")
+    # print_grid(suv)
+    # print()
     for sol in range(1 << tiles_count):
         for i in range(tiles_count):
             pos = tiles[i]
@@ -324,9 +337,9 @@ def smart(x, y):
                 actual_grid[pos[0]+x][pos[1]+y] = 11  # some number we don't know about
                 suv[pos[0]][pos[1]] = 11
         if good_try(x, y):
-            print("viable solution:")
-            print_grid(suv)
-            print()
+            # print("viable solution:")
+            # print_grid(suv)
+            # print()
             all_good_tries.append(sol)
 
     # revert changes
@@ -399,7 +412,7 @@ def solve_grid():
 
 # while 1:
 #     if mouse.is_pressed("left"):
-#         print (getPos())
+#         print(get_pos())
 #         # print (GetPixelRGB(getPos()))
 #         time.sleep(0.2)
 #
@@ -422,7 +435,15 @@ real_x = x_l + real_d / 2
 real_y = y_t + real_d / 2
 
 
-# moveMouse((x_l,y_t))
+# move_mouse((x_l,y_t))
+# time.sleep(1)
+# move_mouse((x_l,y_b))
+# time.sleep(1)
+# move_mouse((x_r,y_t))
+# time.sleep(1)
+# move_mouse((x_r,y_b))
+# time.sleep(1)
+# move_mouse_cell(0,0)
 # exit(0)
 # print(GetPixelRGB(getPos()))
 
